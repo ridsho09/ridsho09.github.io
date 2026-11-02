@@ -143,13 +143,65 @@ function projectVisual(p,index) {
 }
 
 let activeFilter='all';
-let expanded=false;
+let projectView='slideshow';
+let slideIndex=0;
+let slideshowProjects=[];
+const slideTrack=$('#project-slides');
+const reducedMotion=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function projectCard(p){
+  return `<article class="project-card" data-id="${p.id}">${projectVisual(p,projects.indexOf(p))}<div class="project-info"><div class="project-meta"><span class="project-category">${p.category}</span><span class="status ${p.status==='In development'?'dev':''}">${p.status}</span></div><h3>${p.title}</h3><p>${p.summary}</p><div class="project-footer"><span class="project-tools">${p.tools.slice(0,3).join(' / ')}</span><a class="project-link" href="#project/${p.id}" aria-label="Read case study: ${escapeHTML(p.title)}">View case study <span aria-hidden="true">↗</span></a></div></div></article>`;
+}
+function slideMarkup(p,index,total){
+  return `<article class="project-slide" id="slide-${p.id}" role="group" aria-roledescription="slide" aria-label="${index+1} of ${total}: ${escapeHTML(p.title)}" data-project="${p.id}">${projectVisual(p,projects.indexOf(p))}<div class="slide-copy"><div class="slide-kicker">FEATURED WORK / ${String(index+1).padStart(2,'0')}</div><div class="slide-meta"><span class="project-category">${p.category}</span><span class="status ${p.status==='In development'?'dev':''}">${p.status}</span></div><h3>${p.title}</h3><p>${p.summary}</p><div class="skills slide-tools">${p.tools.map(t=>`<span>${t}</span>`).join('')}</div><a class="button primary slide-link" href="#project/${p.id}" aria-label="Read case study: ${escapeHTML(p.title)}">Explore the case study <span aria-hidden="true">↗</span></a></div></article>`;
+}
+function updateSlideState(index){
+  if(!slideshowProjects.length)return;
+  slideIndex=Math.max(0,Math.min(index,slideshowProjects.length-1));
+  $$('.project-slide',slideTrack).forEach((slide,i)=>{
+    const current=i===slideIndex;
+    slide.inert=!current;
+    slide.setAttribute('aria-hidden',String(!current));
+  });
+  $$('#slide-dots button').forEach((dot,i)=>{
+    const current=i===slideIndex;
+    dot.classList.toggle('active',current);
+    dot.setAttribute('aria-disabled',String(current));
+    if(current)dot.setAttribute('aria-current','true');else dot.removeAttribute('aria-current');
+  });
+  $('#previous-project').disabled=slideIndex===0;
+  $('#next-project').disabled=slideIndex===slideshowProjects.length-1;
+  const current=slideshowProjects[slideIndex];
+  $('#slide-counter').innerHTML=`<span aria-hidden="true">${String(slideIndex+1).padStart(2,'0')} <i>/</i> ${String(slideshowProjects.length).padStart(2,'0')}</span><span class="sr-only">Project ${slideIndex+1} of ${slideshowProjects.length}: ${current.title}</span>`;
+}
+function navigateSlide(index){
+  const next=Math.max(0,Math.min(index,slideshowProjects.length-1));
+  updateSlideState(next);
+  slideTrack.scrollTo({left:next*slideTrack.clientWidth,behavior:reducedMotion()?'instant':'smooth'});
+}
 function renderProjects(){
   const filtered=projects.filter(p=>activeFilter==='all'||p.categories.includes(activeFilter));
-  const visible=activeFilter==='all'&&!expanded?filtered.slice(0,6):filtered;
-  $('#project-grid').innerHTML=visible.map(p=>`<article class="project-card" data-id="${p.id}">${projectVisual(p,projects.indexOf(p))}<div class="project-info"><div class="project-meta"><span class="project-category">${p.category}</span><span class="status ${p.status==='In development'?'dev':''}">${p.status}</span></div><h3>${p.title}</h3><p>${p.summary}</p><div class="project-footer"><span class="project-tools">${p.tools.slice(0,3).join(' / ')}</span><a class="project-link" href="#project/${p.id}" aria-label="Read case study: ${escapeHTML(p.title)}">View case study <span aria-hidden="true">↗</span></a></div></div></article>`).join('');
-  $('#project-count').textContent=`${filtered.length} project${filtered.length===1?'':'s'}${visible.length<filtered.length?` · showing ${visible.length}`:''}`;
-  $('#show-more').hidden=activeFilter!=='all'||expanded;
+  slideshowProjects=filtered;
+  slideIndex=0;
+  const showingSlides=projectView==='slideshow';
+  $('#project-slideshow').hidden=!showingSlides;
+  $('#project-grid').hidden=showingSlides;
+  $('#project-count').textContent=`${filtered.length} project${filtered.length===1?'':'s'}`;
+  $('#project-view-description').textContent=showingSlides?'One project at a time. Explore the work behind it.':'All matching projects, ready to explore.';
+  $$('[data-project-view]').forEach(button=>{
+    const active=button.dataset.projectView===projectView;
+    button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active));
+  });
+  if(showingSlides){
+    $('#project-grid').innerHTML='';
+    slideTrack.innerHTML=filtered.map((p,i)=>slideMarkup(p,i,filtered.length)).join('');
+    $('#slide-dots').innerHTML=filtered.map((p,i)=>`<button class="slide-dot" data-slide-index="${i}" aria-label="Show project ${i+1}: ${escapeHTML(p.title)}" aria-controls="slide-${p.id}"><span aria-hidden="true"></span></button>`).join('');
+    slideTrack.scrollTo({left:0,behavior:'instant'});
+    updateSlideState(0);
+  }else{
+    slideTrack.innerHTML='';$('#slide-dots').innerHTML='';
+    $('#project-grid').innerHTML=filtered.map(projectCard).join('');
+  }
 }
 
 function renderCredentials(){
@@ -230,7 +282,35 @@ $$('.filter').forEach(button=>button.addEventListener('click',()=>{
   $$('.filter').forEach(b=>{b.classList.toggle('active',b===button);b.setAttribute('aria-pressed',String(b===button));});
   renderProjects();
 }));
-$('#show-more').addEventListener('click',()=>{expanded=true;renderProjects();const first=$$('.project-card')[6];if(first){first.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'center'});$('a',first).focus({preventScroll:true});}});
+$$('[data-project-view]').forEach(button=>button.addEventListener('click',()=>{
+  projectView=button.dataset.projectView;renderProjects();
+}));
+$('#previous-project').addEventListener('click',()=>navigateSlide(slideIndex-1));
+$('#next-project').addEventListener('click',()=>navigateSlide(slideIndex+1));
+$('#slide-dots').addEventListener('click',event=>{
+  const dot=event.target.closest('[data-slide-index]');
+  if(dot&&dot.getAttribute('aria-disabled')!=='true')navigateSlide(Number(dot.dataset.slideIndex));
+});
+slideTrack.addEventListener('keydown',event=>{
+  const keys={ArrowLeft:slideIndex-1,ArrowRight:slideIndex+1,Home:0,End:slideshowProjects.length-1};
+  if(!(event.key in keys))return;
+  event.preventDefault();slideTrack.focus({preventScroll:true});navigateSlide(keys[event.key]);
+});
+let slideScrollTimer;
+slideTrack.addEventListener('scroll',()=>{
+  clearTimeout(slideScrollTimer);
+  slideScrollTimer=setTimeout(()=>{
+    if(projectView!=='slideshow'||!slideTrack.clientWidth)return;
+    updateSlideState(Math.round(slideTrack.scrollLeft/slideTrack.clientWidth));
+  },100);
+},{passive:true});
+let lastSlideWidth=0;
+if('ResizeObserver' in window)new ResizeObserver(()=>{
+  const width=slideTrack.clientWidth;
+  if(projectView==='slideshow'&&width&&width!==lastSlideWidth){
+    lastSlideWidth=width;slideTrack.scrollTo({left:slideIndex*width,behavior:'instant'});
+  }
+}).observe(slideTrack);
 $('.menu-toggle').addEventListener('click',()=>{
   const toggle=$('.menu-toggle');const open=toggle.getAttribute('aria-expanded')!=='true';
   toggle.setAttribute('aria-expanded',String(open));toggle.setAttribute('aria-label',open?'Close menu':'Open menu');$('#navigation').classList.toggle('open',open);

@@ -58,8 +58,14 @@
   <div class="section-label"><span>02 / SELECTED WORK</span><span class="label-line"></span><span>IDEAS, BUILT & DOCUMENTED</span></div>
   <div class="section-heading"><h2>Proof in the <em>projects.</em></h2><p>Real work across data, business and automation.<br>Explore the question, the process and the evidence.</p></div>
   <div class="work-controls"><div class="filter-group" role="group" aria-label="Filter projects"><button class="filter active" data-filter="all" aria-pressed="true">All work <span>10</span></button><button class="filter" data-filter="data" aria-pressed="false">Data Analytics</button><button class="filter" data-filter="business" aria-pressed="false">Business Analysis</button><button class="filter" data-filter="automation" aria-pressed="false">AI & Automation</button></div><span id="project-count" aria-live="polite">10 projects</span></div>
-  <div class="projects-grid" id="project-grid"></div>
-  <div class="work-more"><button class="button secondary" id="show-more">Explore all 10 projects <span aria-hidden="true">↓</span></button><p class="fineprint">Case studies distinguish completed work, prototypes and development projects.</p></div>
+  <div class="project-view-bar"><p id="project-view-description">One project at a time. Explore the work behind it.</p><div class="project-view-options" role="group" aria-label="Project display"><button class="project-view-button active" data-project-view="slideshow" aria-pressed="true">Slideshow</button><button class="project-view-button" data-project-view="grid" aria-pressed="false">View all projects</button></div></div>
+  <section class="project-slideshow" id="project-slideshow" role="region" aria-roledescription="carousel" aria-label="Featured projects">
+    <div class="slideshow-controls"><div class="slide-counter" id="slide-counter" aria-live="polite" aria-atomic="true"></div><div class="slide-dots" id="slide-dots" role="group" aria-label="Choose a project"></div><div class="slide-arrows"><button id="previous-project" class="slide-arrow" aria-label="Previous project" aria-controls="project-slides"><span aria-hidden="true">←</span></button><button id="next-project" class="slide-arrow" aria-label="Next project" aria-controls="project-slides"><span aria-hidden="true">→</span></button></div></div>
+    <div class="project-slide-track" id="project-slides" tabindex="0" aria-label="Project slides" aria-describedby="slideshow-help"></div>
+    <p class="slideshow-help" id="slideshow-help"><span class="desktop-slide-help">Use the arrows or dots to explore. Arrow keys work when the slides are focused.</span><span class="mobile-slide-help">Swipe left or right, or use the arrows to explore.</span></p>
+  </section>
+  <div class="projects-grid" id="project-grid" hidden></div>
+  <div class="work-more"><p class="fineprint">Case studies distinguish completed work, prototypes and development projects.</p></div>
   <noscript><p>Enable JavaScript to explore the interactive project gallery. You can also visit <a href="https://github.com/ridsho09" target="_blank" rel="noopener noreferrer">my GitHub projects</a>.</p></noscript>
 </div></section>
 
